@@ -4,70 +4,64 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="mobile-web-app-capable" content="yes">
-    <title>TAC-NAV: INSTA-LOCK</title>
+    <title>TAC-NAV: LOCK-CONFIRMED</title>
     <style>
-        :root { --os-green: #39ff14; --os-dim: #004400; --os-alert: #ff0000; --os-bg: #030303; }
+        :root { --os-green: #39ff14; --os-dim: #004400; --os-alert: #ff0000; --os-bg: #030303; --os-locked: #0088ff; }
         body { background: var(--os-bg); color: var(--os-green); font-family: 'Courier New', monospace; text-align: center; margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-weight: 900; }
         body::before { content: " "; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02)); z-index: 10; pointer-events: none; background-size: 100% 3px, 3px 100%; }
         header { padding: 15px 20px; font-size: 10px; border-bottom: 2px solid var(--os-dim); display: flex; justify-content: space-between; letter-spacing: 2px; }
-        .pulse { animation: blink 1.5s infinite; color: var(--os-green); }
+        .pulse { animation: blink 1.5s infinite; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+        
         #main-hud { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; }
         .reticle { width: 220px; height: 220px; border: 2px solid var(--os-dim); border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center; }
-        .reticle-cross::before { content: ""; position: absolute; top: 50%; left: -10%; width: 120%; height: 1px; background: var(--os-dim); }
-        .reticle-cross::after { content: ""; position: absolute; left: 50%; top: -10%; height: 120%; width: 1px; background: var(--os-dim); }
         #arrow { width: 0; height: 0; border-left: 18px solid transparent; border-right: 18px solid transparent; border-bottom: 45px solid var(--os-green); transition: transform 0.1s linear; filter: drop-shadow(0 0 10px var(--os-green)); z-index: 5; }
+        
         #data-bank { margin-top: 25px; text-align: center; width: 280px; border: 1px solid var(--os-dim); padding: 15px; background: rgba(0,20,0,0.2); }
         #distance { font-size: 55px; margin: 0; color: #fff; text-shadow: 0 0 15px var(--os-green); }
         #eta { font-size: 11px; color: var(--os-dim); margin-top: 5px; }
+
         .footer { padding: 20px 30px 50px 30px; background: #000; border-top: 2px solid var(--os-dim); }
-        .btn { background: #000; border: 3px solid var(--os-green); color: var(--os-green); padding: 18px; width: 100%; font-family: inherit; font-size: 14px; margin-bottom: 12px; text-transform: uppercase; font-weight: 900; box-shadow: inset 0 0 5px var(--os-green); }
+        .btn { background: #000; border: 3px solid var(--os-green); color: var(--os-green); padding: 18px; width: 100%; font-family: inherit; font-size: 14px; margin-bottom: 12px; text-transform: uppercase; font-weight: 900; transition: 0.3s; }
+        
+        /* Locked State Styling */
+        .btn.locked { border-color: var(--os-locked); color: var(--os-locked); box-shadow: inset 0 0 10px var(--os-locked); }
         #flareBtn { border-color: var(--os-alert); color: var(--os-alert); }
     </style>
 </head>
 <body id="ui">
     <header>
-        <span>HUD: <span class="pulse">GYRO-ACTIVE</span></span>
-        <span onclick="requestPermission()">PERM_REQ</span>
+        <span>HUD: <span class="pulse">READY</span></span>
+        <span id="pwr">PWR: 2026</span>
     </header>
     
     <div id="main-hud">
         <div class="reticle">
-            <div class="reticle-cross"></div>
             <div id="arrow"></div>
         </div>
         <div id="data-bank">
-            <div id="distance">OFFLINE</div>
+            <div id="distance">NO TARGET</div>
             <div id="eta">EST_TREK: -- MIN</div>
         </div>
     </div>
 
     <div class="footer">
-        <button class="btn" onclick="saveTent()">LOCK TARGET</button>
-        <button class="btn" id="flareBtn" onclick="toggleFlare()">SIGNAL FLARE</button>
+        <button id="lockBtn" class="btn" onclick="saveTent()">Set Location</button>
+        <button class="btn" id="flareBtn" onclick="toggleFlare()">Signal Flare</button>
     </div>
 
     <script>
         let tentLocation = JSON.parse(localStorage.getItem('tentPos'));
-        let userHeading = 0;
-        let targetBearing = 0;
-        const arrow = document.getElementById('arrow'), distEl = document.getElementById('distance'), etaEl = document.getElementById('eta'), ui = document.getElementById('ui');
-        let flareInterval = null;
+        let userHeading = 0, targetBearing = 0;
+        const arrow = document.getElementById('arrow'), distEl = document.getElementById('distance'), etaEl = document.getElementById('eta'), ui = document.getElementById('ui'), lockBtn = document.getElementById('lockBtn');
 
-        // Handle physical rotation
+        // Check if already locked on load
+        if (tentLocation) { setLockedUI(); }
+
         window.addEventListener('deviceorientationabsolute', (e) => {
-            if (e.webkitCompassHeading) userHeading = e.webkitCompassHeading;
-            else userHeading = 360 - e.alpha;
+            userHeading = e.webkitCompassHeading || (360 - e.alpha);
             updateArrow();
         }, true);
-
-        function requestPermission() {
-            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-                DeviceOrientationEvent.requestPermission().then(state => {
-                    if (state === 'granted') alert("Tactical HUD Ready");
-                });
-            }
-        }
 
         function updateArrow() {
             const finalRotation = (targetBearing - userHeading + 360) % 360;
@@ -78,8 +72,14 @@
             navigator.geolocation.getCurrentPosition(pos => {
                 tentLocation = { lat: pos.coords.latitude, lon: pos.coords.longitude };
                 localStorage.setItem('tentPos', JSON.stringify(tentLocation));
-                if (navigator.vibrate) navigator.vibrate(50);
+                setLockedUI();
+                if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
             }, null, {enableHighAccuracy: true});
+        }
+
+        function setLockedUI() {
+            lockBtn.innerText = "Tent Location Locked";
+            lockBtn.classList.add('locked');
         }
 
         function toggleFlare() {
