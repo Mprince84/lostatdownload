@@ -3,74 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tent Seeker</title>
+    <title>Tent Seeker V2</title>
     <style>
-        body { background: #1a1a1a; color: #00ff00; font-family: monospace; text-align: center; margin: 0; overflow: hidden; }
-        #compass { font-size: 100px; margin-top: 50px; transition: transform 0.2s ease-out; }
-        #distance { font-size: 24px; margin: 20px; font-weight: bold; }
-        .btn { padding: 20px; background: #333; color: #00ff00; border: 2px solid #00ff00; font-size: 18px; cursor: pointer; width: 80%; margin: 10px; }
-        #status { font-size: 12px; color: #888; }
+        body { background: #000; color: #0f0; font-family: 'Courier New', monospace; text-align: center; margin: 0; padding: 20px; transition: background 0.1s; }
+        #compass { font-size: 120px; margin: 30px 0; display: inline-block; transition: transform 0.2s ease-out; }
+        #distance { font-size: 28px; font-weight: bold; text-shadow: 0 0 10px #0f0; }
+        #message { font-size: 16px; color: #888; margin-bottom: 20px; height: 20px; }
+        .btn { padding: 18px; background: #111; color: #0f0; border: 2px solid #0f0; font-size: 16px; width: 100%; margin: 8px 0; border-radius: 10px; font-weight: bold; }
+        .btn:active { background: #0f0; color: #000; }
+        #flareBtn { border-color: #f00; color: #f00; }
+        #status { font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: 2px; }
     </style>
 </head>
 <body>
-    <h1>TENT SEEKER v1.0</h1>
-    <div id="status">Waiting for GPS...</div>
-    <div id="compass">⬆️</div>
-    <div id="distance">--- m</div>
+    <div id="status">System: Initialising...</div>
+    <h1>TENT SEEKER V2</h1>
     
-    <button class="btn" onclick="saveTent()">DROP PIN AT TENT</button>
-    <button class="btn" onclick="clearTent()">CLEAR LOCATION</button>
+    <div id="compass">⬆️</div>
+    <div id="distance">--- M</div>
+    <div id="message">Locked on target?</div>
+    
+    <button class="btn" onclick="saveTent()">📍 LOCK TENT LOCATION</button>
+    <button class="btn" id="flareBtn" onclick="toggleFlare()">🚨 EMERGENCY FLARE</button>
+    <button class="btn" onclick="clearTent()" style="border-color:#444; color:#444; font-size:12px;">Reset</button>
 
     <script>
         let tentLocation = JSON.parse(localStorage.getItem('tentPos'));
         const compass = document.getElementById('compass');
         const distEl = document.getElementById('distance');
+        const msgEl = document.getElementById('message');
         const statusEl = document.getElementById('status');
+        let flareInterval = null;
 
         function saveTent() {
             navigator.geolocation.getCurrentPosition(pos => {
                 tentLocation = { lat: pos.coords.latitude, lon: pos.coords.longitude };
                 localStorage.setItem('tentPos', JSON.stringify(tentLocation));
-                alert("Location Locked. Sleep safe.");
+                statusEl.innerText = "Target Locked.";
+                if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
             }, err => alert("GPS Error: " + err.message), {enableHighAccuracy: true});
         }
 
-        function clearTent() {
-            localStorage.removeItem('tentPos');
-            tentLocation = null;
-            distEl.innerText = "--- m";
-        }
+        function clearTent() { if(confirm("Clear target?")) { localStorage.removeItem('tentPos'); tentLocation = null; location.reload(); } }
 
-        function calculateBearing(lat1, lon1, lat2, lon2) {
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const y = Math.sin(dLon) * Math.cos(lat2 * Math.PI / 180);
-            const x = Math.cos(lat1 * Math.PI / 180) * Math.sin(lat2 * Math.PI / 180) -
-                      Math.sin(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.cos(dLon);
-            return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+        function toggleFlare() {
+            if (flareInterval) {
+                clearInterval(flareInterval);
+                flareInterval = null;
+                document.body.style.background = "#000";
+            } else {
+                flareInterval = setInterval(() => {
+                    document.body.style.background = document.body.style.background === "rgb(255, 255, 255)" ? "#000" : "#fff";
+                }, 100);
+            }
         }
 
         function update() {
             navigator.geolocation.getCurrentPosition(pos => {
-                statusEl.innerText = "GPS Signal Active";
+                statusEl.innerText = "Signal: Optimal";
                 if (!tentLocation) return;
 
-                const currentLat = pos.coords.latitude;
-                const currentLon = pos.coords.longitude;
+                const lat1 = pos.coords.latitude, lon1 = pos.coords.longitude;
+                const lat2 = tentLocation.lat, lon2 = tentLocation.lon;
                 
-                // Calculate distance (simplified for small festival area)
-                const dLat = (tentLocation.lat - currentLat) * 111139;
-                const dLon = (tentLocation.lon - currentLon) * 111139 * Math.cos(currentLat * Math.PI / 180);
-                const distance = Math.sqrt(dLat*dLat + dLon*dLon).toFixed(1);
+                // Distance Calculation
+                const dLat = (lat2 - lat1) * 111139;
+                const dLon = (lon2 - lon1) * 111139 * Math.cos(lat1 * Math.PI / 180);
+                const distance = Math.round(Math.sqrt(dLat*dLat + dLon*dLon));
                 
                 distEl.innerText = distance + " METRES";
 
-                // Direction logic (requires device orientation for full compass)
-                const bearing = calculateBearing(currentLat, currentLon, tentLocation.lat, tentLocation.lon);
+                // Fun Messages & Vibe
+                if (distance > 500) msgEl.innerText = "A long trek ahead...";
+                else if (distance > 100) msgEl.innerText = "I can smell the burgers.";
+                else if (distance > 20) {
+                    msgEl.innerText = "Closing in...";
+                    if (navigator.vibrate) navigator.vibrate(50); 
+                }
+                else {
+                    msgEl.innerText = "YOU ARE HOME.";
+                    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+                }
+
+                // Bearing for Arrow
+                const dL = (lon2 - lon1) * Math.PI / 180;
+                const y = Math.sin(dL) * Math.cos(lat2 * Math.PI / 180);
+                const x = Math.cos(lat1 * Math.PI / 180) * Math.sin(lat2 * Math.PI / 180) -
+                          Math.sin(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.cos(dL);
+                const bearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
                 compass.style.transform = `rotate(${bearing}deg)`;
             }, null, {enableHighAccuracy: true});
         }
 
-        setInterval(update, 3000); // Pulse every 3 seconds to save battery
+        setInterval(update, 3000);
     </script>
 </body>
 </html>
