@@ -1,94 +1,79 @@
-                
-                /<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DL26 Tent Seeker</title>
+    <title>DL26-FINAL-OS</title>
     <style>
-        :root { --dl-green: #0f0; --dl-red: #f00; --dl-dark: #050505; }
-        @keyframes pulse-green { 0% { box-shadow: inset 0 0 10px var(--dl-green); } 50% { box-shadow: inset 0 0 40px var(--dl-green); background: #0a1a0a; } 100% { box-shadow: inset 0 0 10px var(--dl-green); } }
-        body { background: var(--dl-dark); color: var(--dl-green); font-family: 'Courier New', monospace; text-align: center; margin: 0; height: 100vh; display: flex; flex-direction: column; justify-content: space-around; overflow: hidden; transition: background 0.3s; }
-        #status { font-size: 9px; color: #333; letter-spacing: 3px; position: absolute; top: 10px; width: 100%; }
-        h1 { font-size: 1.4rem; letter-spacing: -1px; text-transform: uppercase; margin: 0; text-shadow: 2px 2px var(--dl-red); color: #fff; }
-        #compass { font-size: 100px; filter: drop-shadow(0 0 15px var(--dl-green)); display: block; margin: 0 auto; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        #distance { font-size: 55px; font-weight: 900; margin: 0; color: #fff; text-shadow: 0 0 20px var(--dl-green); }
-        #message { font-size: 14px; color: #888; letter-spacing: 1px; height: 20px; text-transform: uppercase; }
-        .controls { padding: 0 30px; }
-        .btn { padding: 18px; background: #000; color: var(--dl-green); border: 1px solid var(--dl-green); font-size: 14px; width: 100%; margin: 8px 0; border-radius: 2px; font-weight: bold; text-transform: uppercase; box-shadow: 4px 4px 0px var(--dl-red); cursor: pointer; }
-        #flareBtn { border-color: var(--dl-red); color: var(--dl-red); box-shadow: 4px 4px 0px var(--dl-green); }
-        .reset-link { color: #222; font-size: 11px; background: none; border: none; width: 100%; margin-top: 15px; text-decoration: underline; }
-        .near-tent { animation: pulse-green 1.5s infinite; }
+        :root { --os-green: #22ff22; --os-dim: #004400; --os-alert: #ff0000; --os-bg: #030303; }
+        body { background: var(--os-bg); color: var(--os-green); font-family: 'Courier New', monospace; text-align: center; margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-weight: bold; }
+        body::after { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03)); z-index: 2; background-size: 100% 2px, 3px 100%; pointer-events: none; }
+        header { padding: 10px 20px; font-size: 10px; border-bottom: 1px solid var(--os-dim); display: flex; justify-content: space-between; color: var(--os-dim); }
+        #main-hud { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1; }
+        .reticle { width: 240px; height: 240px; border: 1px solid var(--os-dim); border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 20px #000; }
+        .reticle::before, .reticle::after { content: ""; position: absolute; background: var(--os-dim); }
+        .reticle::before { width: 100%; height: 1px; } .reticle::after { height: 100%; width: 1px; }
+        #arrow { width: 0; height: 0; border-left: 18px solid transparent; border-right: 18px solid transparent; border-bottom: 45px solid var(--os-green); transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1); filter: drop-shadow(0 0 12px var(--os-green)); z-index: 5; }
+        #data-bank { margin-top: 30px; text-align: left; width: 240px; border-top: 1px solid var(--os-dim); padding-top: 10px; }
+        #distance { font-size: 52px; margin: 0; letter-spacing: -3px; }
+        #status-text { font-size: 11px; color: var(--os-dim); margin: 2px 0; text-transform: uppercase; }
+        #telemetry { font-size: 9px; color: #111; margin-top: 5px; font-weight: normal; }
+        .footer { padding: 20px; z-index: 5; }
+        .btn { background: #000; border: 1px solid var(--os-green); color: var(--os-green); padding: 16px; width: 100%; font-family: inherit; font-size: 13px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px; }
+        .btn:active { background: var(--os-green); color: black; }
+        #flareBtn { border-color: var(--os-alert); color: var(--os-alert); font-size: 11px; }
+        .proximity-alert { animation: alarm-pulse 0.8s infinite; }
+        @keyframes alarm-pulse { 0% { background: #030303; } 50% { background: #001500; } 100% { background: #030303; } }
     </style>
 </head>
-<body>
-    <div id="status">DOWNLOAD // DONINGTON PARK // 2026</div>
-    <h1>TENT SEEKER</h1>
-    
-    <div id="compass">🤘</div>
-    
-    <div>
-        <p id="distance">--- M</p>
-        <p id="message">Awaiting coordinates...</p>
+<body id="ui">
+    <header><span>FILE: TENT_LOC</span><span id="pwr">BAT_CRITICAL</span></header>
+    <div id="main-hud">
+        <div class="reticle"><div id="arrow"></div></div>
+        <div id="data-bank">
+            <div id="status-text">SYS_IDLE</div>
+            <div id="distance">-- M</div>
+            <div id="telemetry">LAT: --- // LON: ---</div>
+        </div>
     </div>
-    
-    <div class="controls">
-        <button class="btn" onclick="saveTent()">LOCK TARGET</button>
-        <button class="btn" id="flareBtn" onclick="toggleFlare()">EMERGENCY FLARE</button>
-        <button class="reset-link" onclick="clearTent()">SYSTEM RESET</button>
+    <div class="footer">
+        <button class="btn" onclick="saveTent()">LOCK COORDINATES</button>
+        <button class="btn" id="flareBtn" onclick="toggleFlare()">SIGNAL FLARE</button>
+        <button onclick="clearTent()" style="background:none; border:none; color:#111; font-size:9px; width:100%;">[ PURGE SYSTEM MEMORY ]</button>
     </div>
-
     <script>
         let tentLocation = JSON.parse(localStorage.getItem('tentPos'));
-        const compass = document.getElementById('compass');
-        const distEl = document.getElementById('distance');
-        const msgEl = document.getElementById('message');
+        const arrow = document.getElementById('arrow'), distEl = document.getElementById('distance'), statusEl = document.getElementById('status-text'), telEl = document.getElementById('telemetry'), ui = document.getElementById('ui');
         let flareInterval = null;
-
         function saveTent() {
             navigator.geolocation.getCurrentPosition(pos => {
                 tentLocation = { lat: pos.coords.latitude, lon: pos.coords.longitude };
                 localStorage.setItem('tentPos', JSON.stringify(tentLocation));
-                msgEl.innerText = "LOCATION SECURED";
-                if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+                statusEl.innerText = "TRK_SIGNAL: LOCKED";
+                if (navigator.vibrate) navigator.vibrate([30, 30]);
             }, null, {enableHighAccuracy: true});
         }
-
-        function clearTent() { localStorage.removeItem('tentPos'); tentLocation = null; location.reload(); }
-
+        function clearTent() { if(confirm("Purge?")) { localStorage.removeItem('tentPos'); location.reload(); } }
         function toggleFlare() {
-            if (flareInterval) { clearInterval(flareInterval); flareInterval = null; document.body.style.background = "#050505"; } 
-            else { flareInterval = setInterval(() => { 
-                document.body.style.background = document.body.style.background === "rgb(0, 255, 0)" ? "#fff" : "#0f0"; 
-            }, 80); }
+            if (flareInterval) { clearInterval(flareInterval); flareInterval = null; ui.style.background = "#030303"; } 
+            else { flareInterval = setInterval(() => { ui.style.background = ui.style.background === "rgb(0, 255, 0)" ? "#fff" : "#0f0"; }, 80); }
         }
-
         function update() {
             navigator.geolocation.getCurrentPosition(pos => {
-                if (!tentLocation) return;
+                if (!tentLocation) { telEl.innerText = `GPS: ${pos.coords.latitude.toFixed(4)} / ${pos.coords.longitude.toFixed(4)}`; return; }
                 const dLat = (tentLocation.lat - pos.coords.latitude) * 111139;
                 const dLon = (tentLocation.lon - pos.coords.longitude) * 111139 * Math.cos(pos.coords.latitude * Math.PI / 180);
                 const distance = Math.round(Math.sqrt(dLat*dLat + dLon*dLon));
-                distEl.innerText = distance + "M";
-                
-                // Proximity Glow Activation
-                if (distance < 30) document.body.classList.add('near-tent');
-                else document.body.classList.remove('near-tent');
-
-                if (distance > 200) msgEl.innerText = "IN THE WASTELAND";
-                else if (distance > 20) msgEl.innerText = "APPROACHING CAMP";
-                else { 
-                    msgEl.innerText = "REACHED SANCTUARY"; 
-                    if (navigator.vibrate && distance < 5) navigator.vibrate(50); 
-                }
-
+                distEl.innerText = distance + " M";
+                telEl.innerText = `LAT: ${pos.coords.latitude.toFixed(5)} / LON: ${pos.coords.longitude.toFixed(5)}`;
+                if (distance < 20) { ui.classList.add('proximity-alert'); statusEl.innerText = "TRK_SIGNAL: ARRIVING"; } 
+                else { ui.classList.remove('proximity-alert'); statusEl.innerText = "TRK_SIGNAL: ACTIVE"; }
                 const y = Math.sin((tentLocation.lon - pos.coords.longitude) * Math.PI / 180) * Math.cos(tentLocation.lat * Math.PI / 180);
                 const x = Math.cos(pos.coords.latitude * Math.PI / 180) * Math.sin(tentLocation.lat * Math.PI / 180) - Math.sin(pos.coords.latitude * Math.PI / 180) * Math.cos(tentLocation.lat * Math.PI / 180) * Math.cos((tentLocation.lon - pos.coords.longitude) * Math.PI / 180);
-                const bearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
-                compass.style.transform = `rotate(${bearing}deg)`;
+                arrow.style.transform = `rotate(${(Math.atan2(y, x) * 180 / Math.PI + 360) % 360}deg)`;
             }, null, {enableHighAccuracy: true});
         }
-        setInterval(update, 2000);
+        setInterval(update, 3000); // 3-second ping for battery conservation
     </script>
 </body>
 </html>
