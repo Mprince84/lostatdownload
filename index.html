@@ -1,101 +1,94 @@
-<!DOCTYPE html>
+                
+                /<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tent Seeker V2</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DL26 Tent Seeker</title>
     <style>
-        body { background: #000; color: #0f0; font-family: 'Courier New', monospace; text-align: center; margin: 0; padding: 20px; transition: background 0.1s; }
-        #compass { font-size: 120px; margin: 30px 0; display: inline-block; transition: transform 0.2s ease-out; }
-        #distance { font-size: 28px; font-weight: bold; text-shadow: 0 0 10px #0f0; }
-        #message { font-size: 16px; color: #888; margin-bottom: 20px; height: 20px; }
-        .btn { padding: 18px; background: #111; color: #0f0; border: 2px solid #0f0; font-size: 16px; width: 100%; margin: 8px 0; border-radius: 10px; font-weight: bold; }
-        .btn:active { background: #0f0; color: #000; }
-        #flareBtn { border-color: #f00; color: #f00; }
-        #status { font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: 2px; }
+        :root { --dl-green: #0f0; --dl-red: #f00; --dl-dark: #050505; }
+        @keyframes pulse-green { 0% { box-shadow: inset 0 0 10px var(--dl-green); } 50% { box-shadow: inset 0 0 40px var(--dl-green); background: #0a1a0a; } 100% { box-shadow: inset 0 0 10px var(--dl-green); } }
+        body { background: var(--dl-dark); color: var(--dl-green); font-family: 'Courier New', monospace; text-align: center; margin: 0; height: 100vh; display: flex; flex-direction: column; justify-content: space-around; overflow: hidden; transition: background 0.3s; }
+        #status { font-size: 9px; color: #333; letter-spacing: 3px; position: absolute; top: 10px; width: 100%; }
+        h1 { font-size: 1.4rem; letter-spacing: -1px; text-transform: uppercase; margin: 0; text-shadow: 2px 2px var(--dl-red); color: #fff; }
+        #compass { font-size: 100px; filter: drop-shadow(0 0 15px var(--dl-green)); display: block; margin: 0 auto; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        #distance { font-size: 55px; font-weight: 900; margin: 0; color: #fff; text-shadow: 0 0 20px var(--dl-green); }
+        #message { font-size: 14px; color: #888; letter-spacing: 1px; height: 20px; text-transform: uppercase; }
+        .controls { padding: 0 30px; }
+        .btn { padding: 18px; background: #000; color: var(--dl-green); border: 1px solid var(--dl-green); font-size: 14px; width: 100%; margin: 8px 0; border-radius: 2px; font-weight: bold; text-transform: uppercase; box-shadow: 4px 4px 0px var(--dl-red); cursor: pointer; }
+        #flareBtn { border-color: var(--dl-red); color: var(--dl-red); box-shadow: 4px 4px 0px var(--dl-green); }
+        .reset-link { color: #222; font-size: 11px; background: none; border: none; width: 100%; margin-top: 15px; text-decoration: underline; }
+        .near-tent { animation: pulse-green 1.5s infinite; }
     </style>
 </head>
 <body>
-    <div id="status">System: Initialising...</div>
-    <h1>TENT SEEKER V2</h1>
+    <div id="status">DOWNLOAD // DONINGTON PARK // 2026</div>
+    <h1>TENT SEEKER</h1>
     
-    <div id="compass">⬆️</div>
-    <div id="distance">--- M</div>
-    <div id="message">Locked on target?</div>
+    <div id="compass">🤘</div>
     
-    <button class="btn" onclick="saveTent()">📍 LOCK TENT LOCATION</button>
-    <button class="btn" id="flareBtn" onclick="toggleFlare()">🚨 EMERGENCY FLARE</button>
-    <button class="btn" onclick="clearTent()" style="border-color:#444; color:#444; font-size:12px;">Reset</button>
+    <div>
+        <p id="distance">--- M</p>
+        <p id="message">Awaiting coordinates...</p>
+    </div>
+    
+    <div class="controls">
+        <button class="btn" onclick="saveTent()">LOCK TARGET</button>
+        <button class="btn" id="flareBtn" onclick="toggleFlare()">EMERGENCY FLARE</button>
+        <button class="reset-link" onclick="clearTent()">SYSTEM RESET</button>
+    </div>
 
     <script>
         let tentLocation = JSON.parse(localStorage.getItem('tentPos'));
         const compass = document.getElementById('compass');
         const distEl = document.getElementById('distance');
         const msgEl = document.getElementById('message');
-        const statusEl = document.getElementById('status');
         let flareInterval = null;
 
         function saveTent() {
             navigator.geolocation.getCurrentPosition(pos => {
                 tentLocation = { lat: pos.coords.latitude, lon: pos.coords.longitude };
                 localStorage.setItem('tentPos', JSON.stringify(tentLocation));
-                statusEl.innerText = "Target Locked.";
+                msgEl.innerText = "LOCATION SECURED";
                 if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-            }, err => alert("GPS Error: " + err.message), {enableHighAccuracy: true});
+            }, null, {enableHighAccuracy: true});
         }
 
-        function clearTent() { if(confirm("Clear target?")) { localStorage.removeItem('tentPos'); tentLocation = null; location.reload(); } }
+        function clearTent() { localStorage.removeItem('tentPos'); tentLocation = null; location.reload(); }
 
         function toggleFlare() {
-            if (flareInterval) {
-                clearInterval(flareInterval);
-                flareInterval = null;
-                document.body.style.background = "#000";
-            } else {
-                flareInterval = setInterval(() => {
-                    document.body.style.background = document.body.style.background === "rgb(255, 255, 255)" ? "#000" : "#fff";
-                }, 100);
-            }
+            if (flareInterval) { clearInterval(flareInterval); flareInterval = null; document.body.style.background = "#050505"; } 
+            else { flareInterval = setInterval(() => { 
+                document.body.style.background = document.body.style.background === "rgb(0, 255, 0)" ? "#fff" : "#0f0"; 
+            }, 80); }
         }
 
         function update() {
             navigator.geolocation.getCurrentPosition(pos => {
-                statusEl.innerText = "Signal: Optimal";
                 if (!tentLocation) return;
-
-                const lat1 = pos.coords.latitude, lon1 = pos.coords.longitude;
-                const lat2 = tentLocation.lat, lon2 = tentLocation.lon;
-                
-                // Distance Calculation
-                const dLat = (lat2 - lat1) * 111139;
-                const dLon = (lon2 - lon1) * 111139 * Math.cos(lat1 * Math.PI / 180);
+                const dLat = (tentLocation.lat - pos.coords.latitude) * 111139;
+                const dLon = (tentLocation.lon - pos.coords.longitude) * 111139 * Math.cos(pos.coords.latitude * Math.PI / 180);
                 const distance = Math.round(Math.sqrt(dLat*dLat + dLon*dLon));
+                distEl.innerText = distance + "M";
                 
-                distEl.innerText = distance + " METRES";
+                // Proximity Glow Activation
+                if (distance < 30) document.body.classList.add('near-tent');
+                else document.body.classList.remove('near-tent');
 
-                // Fun Messages & Vibe
-                if (distance > 500) msgEl.innerText = "A long trek ahead...";
-                else if (distance > 100) msgEl.innerText = "I can smell the burgers.";
-                else if (distance > 20) {
-                    msgEl.innerText = "Closing in...";
-                    if (navigator.vibrate) navigator.vibrate(50); 
-                }
-                else {
-                    msgEl.innerText = "YOU ARE HOME.";
-                    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+                if (distance > 200) msgEl.innerText = "IN THE WASTELAND";
+                else if (distance > 20) msgEl.innerText = "APPROACHING CAMP";
+                else { 
+                    msgEl.innerText = "REACHED SANCTUARY"; 
+                    if (navigator.vibrate && distance < 5) navigator.vibrate(50); 
                 }
 
-                // Bearing for Arrow
-                const dL = (lon2 - lon1) * Math.PI / 180;
-                const y = Math.sin(dL) * Math.cos(lat2 * Math.PI / 180);
-                const x = Math.cos(lat1 * Math.PI / 180) * Math.sin(lat2 * Math.PI / 180) -
-                          Math.sin(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.cos(dL);
+                const y = Math.sin((tentLocation.lon - pos.coords.longitude) * Math.PI / 180) * Math.cos(tentLocation.lat * Math.PI / 180);
+                const x = Math.cos(pos.coords.latitude * Math.PI / 180) * Math.sin(tentLocation.lat * Math.PI / 180) - Math.sin(pos.coords.latitude * Math.PI / 180) * Math.cos(tentLocation.lat * Math.PI / 180) * Math.cos((tentLocation.lon - pos.coords.longitude) * Math.PI / 180);
                 const bearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
                 compass.style.transform = `rotate(${bearing}deg)`;
             }, null, {enableHighAccuracy: true});
         }
-
-        setInterval(update, 3000);
+        setInterval(update, 2000);
     </script>
 </body>
 </html>
