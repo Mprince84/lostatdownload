@@ -4,70 +4,73 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#030303">
-    <title>DL26-FINAL-OS</title>
+    <title>TAC-NAV: OVERLORD</title>
     <style>
-        :root { --os-green: #39ff14; --os-dim: #008800; --os-alert: #ff0000; --os-bg: #030303; }
+        :root { --os-green: #39ff14; --os-dim: #004400; --os-alert: #ff0000; --os-bg: #030303; }
         
         body { background: var(--os-bg); color: var(--os-green); font-family: 'Courier New', monospace; text-align: center; margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-weight: 900; }
         
-        header { padding: 15px 20px; font-size: 11px; border-bottom: 1px solid var(--os-dim); display: flex; justify-content: space-between; color: var(--os-dim); background: rgba(0,0,0,0.8); }
+        /* Scanline Overlay */
+        body::before { content: " "; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02)); z-index: 10; pointer-events: none; background-size: 100% 3px, 3px 100%; }
 
-        #main-hud { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 10px; }
+        header { padding: 15px 20px; font-size: 10px; border-bottom: 2px solid var(--os-dim); display: flex; justify-content: space-between; letter-spacing: 2px; }
+        .pulse { animation: blink 1.5s infinite; color: var(--os-green); }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
 
-        /* Sharper, brighter reticle */
-        .reticle { width: 220px; height: 220px; border: 2px solid var(--os-dim); border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 15px #000; }
-        .reticle::before { content: ""; position: absolute; width: 100%; height: 1px; background: var(--os-dim); }
-        .reticle::after { content: ""; position: absolute; height: 100%; width: 1px; background: var(--os-dim); }
+        #main-hud { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; }
 
-        #arrow { width: 0; height: 0; border-left: 18px solid transparent; border-right: 18px solid transparent; border-bottom: 45px solid var(--os-green); transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1); filter: drop-shadow(0 0 15px var(--os-green)); z-index: 5; }
+        .reticle { width: 200px; height: 200px; border: 2px solid var(--os-dim); border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center; }
+        .reticle-cross { position: absolute; width: 100%; height: 100%; }
+        .reticle-cross::before { content: ""; position: absolute; top: 50%; left: -10%; width: 120%; height: 1px; background: var(--os-dim); }
+        .reticle-cross::after { content: ""; position: absolute; left: 50%; top: -10%; height: 120%; width: 1px; background: var(--os-dim); }
 
-        #data-bank { margin-top: 25px; text-align: left; width: 260px; border-top: 2px solid var(--os-dim); padding-top: 15px; }
-        #distance { font-size: 58px; margin: 0; letter-spacing: -2px; color: #fff; text-shadow: 0 0 10px var(--os-green); }
-        #status-text { font-size: 14px; color: var(--os-green); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
+        #arrow { width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-bottom: 40px solid var(--os-green); transition: transform 0.5s ease-out; filter: drop-shadow(0 0 10px var(--os-green)); z-index: 5; }
 
-        /* Fixed Footer for Mobile Screens */
-        .footer { padding: 20px 30px 40px 30px; background: #000; border-top: 1px solid #111; }
-        .btn { background: #000; border: 2px solid var(--os-green); color: var(--os-green); padding: 18px; width: 100%; font-family: inherit; font-size: 14px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 2px; font-weight: 900; }
-        .btn:active { background: var(--os-green); color: black; }
-        #flareBtn { border-color: var(--os-alert); color: var(--os-alert); }
-        
-        .proximity-alert { animation: alarm-pulse 0.6s infinite; }
-        @keyframes alarm-pulse { 0% { background: #030303; } 50% { background: #002200; } 100% { background: #030303; } }
+        #data-bank { margin-top: 20px; text-align: center; width: 280px; border: 1px solid var(--os-dim); padding: 15px; background: rgba(0,20,0,0.2); }
+        #distance { font-size: 60px; margin: 0; color: #fff; text-shadow: 0 0 15px var(--os-green); line-height: 1; }
+        #eta { font-size: 12px; color: var(--os-dim); margin-top: 5px; }
+
+        .footer { padding: 20px 30px 50px 30px; background: #000; border-top: 2px solid var(--os-dim); }
+        .btn { background: #000; border: 3px solid var(--os-green); color: var(--os-green); padding: 18px; width: 100%; font-family: inherit; font-size: 14px; margin-bottom: 12px; text-transform: uppercase; font-weight: 900; box-shadow: inset 0 0 5px var(--os-green); }
+        #flareBtn { border-color: var(--os-alert); color: var(--os-alert); box-shadow: inset 0 0 5px var(--os-alert); }
     </style>
 </head>
 <body id="ui">
-    <header><span>FILE: TENT_LOC</span><span>STATUS: ACTIVE</span></header>
+    <header>
+        <span>STATUS: <span class="pulse">SCANNING</span></span>
+        <span>MAG_NORTH: ACTIVE</span>
+    </header>
     
     <div id="main-hud">
-        <div class="reticle"><div id="arrow"></div></div>
+        <div class="reticle">
+            <div class="reticle-cross"></div>
+            <div id="arrow"></div>
+        </div>
+        
         <div id="data-bank">
-            <div id="status-text">TRK_SIGNAL: STANDBY</div>
             <div id="distance">-- M</div>
+            <div id="eta">EST_TREK: -- MIN</div>
         </div>
     </div>
 
     <div class="footer">
-        <button class="btn" onclick="saveTent()">LOCK COORDINATES</button>
+        <button class="btn" onclick="saveTent()">LOCK TARGET</button>
         <button class="btn" id="flareBtn" onclick="toggleFlare()">SIGNAL FLARE</button>
-        <button onclick="clearTent()" style="background:none; border:none; color:#222; font-size:10px; width:100%; letter-spacing:1px;">[ PURGE CACHE ]</button>
+        <div style="font-size: 9px; color: #1a1a1a; margin-top: 10px;">AUTH_REQUIRED // SESSION_2026</div>
     </div>
 
     <script>
         let tentLocation = JSON.parse(localStorage.getItem('tentPos'));
-        const arrow = document.getElementById('arrow'), distEl = document.getElementById('distance'), statusEl = document.getElementById('status-text'), ui = document.getElementById('ui');
+        const arrow = document.getElementById('arrow'), distEl = document.getElementById('distance'), etaEl = document.getElementById('eta'), ui = document.getElementById('ui');
         let flareInterval = null;
 
         function saveTent() {
             navigator.geolocation.getCurrentPosition(pos => {
                 tentLocation = { lat: pos.coords.latitude, lon: pos.coords.longitude };
                 localStorage.setItem('tentPos', JSON.stringify(tentLocation));
-                statusEl.innerText = "TRK_SIGNAL: LOCKED";
                 if (navigator.vibrate) navigator.vibrate([40, 40]);
             }, null, {enableHighAccuracy: true});
         }
-
-        function clearTent() { localStorage.removeItem('tentPos'); location.reload(); }
 
         function toggleFlare() {
             if (flareInterval) { clearInterval(flareInterval); flareInterval = null; ui.style.background = "#030303"; } 
@@ -81,16 +84,17 @@
                 const dLon = (tentLocation.lon - pos.coords.longitude) * 111139 * Math.cos(pos.coords.latitude * Math.PI / 180);
                 const distance = Math.round(Math.sqrt(dLat*dLat + dLon*dLon));
                 distEl.innerText = distance + " M";
-
-                if (distance < 20) { ui.classList.add('proximity-alert'); statusEl.innerText = "TRK_SIGNAL: ARRIVING"; } 
-                else { ui.classList.remove('proximity-alert'); statusEl.innerText = "TRK_SIGNAL: ACTIVE"; }
+                
+                // ETA Logic
+                const minutes = Math.round(distance / 84); // avg walk speed
+                etaEl.innerText = `EST_TREK: ${minutes} MIN`;
 
                 const y = Math.sin((tentLocation.lon - pos.coords.longitude) * Math.PI / 180) * Math.cos(tentLocation.lat * Math.PI / 180);
                 const x = Math.cos(pos.coords.latitude * Math.PI / 180) * Math.sin(tentLocation.lat * Math.PI / 180) - Math.sin(pos.coords.latitude * Math.PI / 180) * Math.cos(tentLocation.lat * Math.PI / 180) * Math.cos((tentLocation.lon - pos.coords.longitude) * Math.PI / 180);
                 arrow.style.transform = `rotate(${(Math.atan2(y, x) * 180 / Math.PI + 360) % 360}deg)`;
             }, null, {enableHighAccuracy: true});
         }
-        setInterval(update, 2000);
+        setInterval(update, 2500);
     </script>
 </body>
 </html>
